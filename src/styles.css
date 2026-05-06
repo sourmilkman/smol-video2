@@ -394,6 +394,33 @@ input[type="range"] {
   line-height: 1.45;
 }
 
+.error-block {
+  display: grid;
+  gap: 10px;
+}
+
+.error-block details {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0b100e;
+  color: var(--muted-strong);
+  padding: 10px 12px;
+}
+
+.error-block summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.error-block pre {
+  overflow-x: auto;
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .spin {
   animation: spin 900ms linear infinite;
 }

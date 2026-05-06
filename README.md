@@ -7,6 +7,7 @@ An installable PWA for making video files smaller directly in the browser. Drop 
 - Drag-and-drop or file picker input for common video containers such as MP4, MOV, WMV, AVI, MKV, and WebM.
 - Local FFmpeg/WebAssembly transcoding; the source video is not uploaded.
 - Dimension slider, quality slider, and optional target-size mode.
+- Phone compatibility mode strips extra streams and metadata that often appear in mobile MOV/MP4 files.
 - Output filename editing with the default `_smol` suffix.
 - Save picker and folder picker support in compatible Chromium browsers, with regular browser download fallback.
 - Open the finished MP4 in a new tab after encoding.
@@ -17,13 +18,13 @@ An installable PWA for making video files smaller directly in the browser. Drop 
 
 Browsers do not expose the original local file path to web apps. That means a PWA cannot silently save the new video beside the original file by default. In Chromium-based browsers, users can choose a file or folder through the File System Access API. In other browsers, the app downloads the output using the `_smol` filename.
 
-Common phone videos usually work, including MP4 and MOV files using H.264, HEVC/H.265, or AAC audio when the bundled FFmpeg build can decode them. Output is normalized to MP4 with H.264 video and AAC audio for broad playback support.
+Common phone videos often work, including MP4 and MOV files using H.264, HEVC/H.265, or AAC audio when the bundled FFmpeg build can decode them. Output is normalized to MP4 with H.264 video and AAC audio for broad playback support. Phone compatibility mode removes extra metadata, subtitle/data streams, chapters, and other camera-specific tracks before encoding.
 
 On phones, the most reliable export path is usually Download or Share. Exact save-location picking is mainly a desktop Chromium feature, so iOS and many Android browsers will not offer same-folder saving.
 
 PWAs cannot open the containing folder in the system file manager after encoding. If folder output is supported, choose the folder before encoding; otherwise use Download, Open video, or Share.
 
-Large videos can be slow or memory-heavy because FFmpeg is running inside WebAssembly. Some unusual, proprietary, or DRM-protected codecs may fail, and unsupported MOV or WMV clips may not preview in every browser before conversion.
+Large videos can be slow or memory-heavy because FFmpeg is running inside WebAssembly. Some unusual, proprietary, HDR/Dolby Vision/spatial, cinematic-mode, or DRM-protected codecs may fail, and unsupported MOV or WMV clips may not preview in every browser before conversion.
 
 ## Run locally
 

@@ -123,6 +123,7 @@ function App() {
   const [quality, setQuality] = useState(28);
   const [targetSize, setTargetSize] = useState(0);
   const [useTargetSize, setUseTargetSize] = useState(false);
+  const [phoneCompatibility, setPhoneCompatibility] = useState(true);
   const [outputName, setOutputName] = useState("");
   const [savePlan, setSavePlan] = useState<SavePlan>({ mode: "download" });
   const [isDragging, setIsDragging] = useState(false);
@@ -137,6 +138,7 @@ function App() {
     destination: string;
   } | null>(null);
   const [error, setError] = useState("");
+  const [ffmpegLog, setFfmpegLog] = useState("");
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
 
   const canPickSaveFile = typeof window.showSaveFilePicker === "function";
@@ -190,6 +192,7 @@ function App() {
     setTargetSize(Math.max(1, Math.floor(file.size / 1024 / 1024 / 2)));
     setResult(null);
     setError("");
+    setFfmpegLog("");
 
     getVideoMeta(file)
       .then(setMeta)
@@ -361,6 +364,30 @@ function App() {
     return "downloads";
   };
 
+  const explainFfmpegFailure = (err: unknown, logs: string[]) => {
+    const rawMessage = err instanceof Error ? err.message : "Compression failed.";
+    const recentLog = logs.slice(-12).join("\n");
+    const lowerLog = recentLog.toLowerCase();
+
+    if (lowerLog.includes("invalid data found") || lowerLog.includes("moov atom not found")) {
+      return "This file could not be read as a complete video. If it came from cloud storage, download the original to the phone first and try again.";
+    }
+
+    if (lowerLog.includes("unknown decoder") || lowerLog.includes("decoder not found") || lowerLog.includes("unsupported codec")) {
+      return "This phone video uses a codec this browser FFmpeg build cannot decode. Try changing the camera format to 'Most Compatible' for future clips, or convert this one on desktop first.";
+    }
+
+    if (lowerLog.includes("out of memory") || lowerLog.includes("memory") || lowerLog.includes("abort")) {
+      return "The browser ran out of memory while reading this video. Try a shorter clip, reduce the target dimensions first, or use a desktop browser for this file.";
+    }
+
+    if (rawMessage.includes("code=-1")) {
+      return "FFmpeg could not read this video in the browser. Phone clips with HEVC/HDR, cinematic/spatial metadata, or very large 4K streams are the most common cause.";
+    }
+
+    return rawMessage;
+  };
+
   const makeSmol = async () => {
     if (!file || !outputDimensions) {
       setError("Choose a video before compressing.");
@@ -369,8 +396,10 @@ function App() {
 
     setIsWorking(true);
     setError("");
+    setFfmpegLog("");
     setResult(null);
     setProgress(0);
+    const logs: string[] = [];
 
     const inputName = `input${getExtension(file.name)}`;
     const safeOutputName = outputName.trim().endsWith(".mp4")
@@ -381,6 +410,17 @@ function App() {
     try {
       await loadFfmpeg(setStatus);
 
+      ffmpeg.on("log", ({ message }) => {
+        if (!message) {
+          return;
+        }
+
+        logs.push(message);
+        if (logs.length > 60) {
+          logs.shift();
+        }
+      });
+
       ffmpeg.on("progress", ({ progress: nextProgress }) => {
         setProgress(Math.max(0, Math.min(100, Math.round(nextProgress * 100))));
       });
@@ -389,10 +429,24 @@ function App() {
       await ffmpeg.writeFile(inputName, await fetchFile(file));
 
       const args = [
+        "-hide_banner",
+        "-nostdin",
+        "-y",
+        "-ignore_unknown",
         "-i",
         inputName,
+        "-map",
+        "0:v:0",
+        "-map",
+        "0:a?",
+        "-sn",
+        "-dn",
+        "-map_chapters",
+        "-1",
+        "-map_metadata",
+        phoneCompatibility ? "-1" : "0",
         "-vf",
-        `scale=${outputDimensions.width}:${outputDimensions.height}:flags=lanczos`,
+        `scale=${outputDimensions.width}:${outputDimensions.height}:flags=lanczos,format=yuv420p`,
         "-c:v",
         "libx264",
         "-preset",
@@ -440,7 +494,8 @@ function App() {
       await ffmpeg.deleteFile(inputName).catch(() => undefined);
       await ffmpeg.deleteFile(tempOutputName).catch(() => undefined);
     } catch (err) {
-      setError((err as Error).message || "Compression failed.");
+      setError(explainFfmpegFailure(err, logs));
+      setFfmpegLog(logs.slice(-10).join("\n"));
       setStatus("Stopped");
     } finally {
       setIsWorking(false);
@@ -574,6 +629,16 @@ function App() {
             <span>Target a file size instead of quality</span>
           </label>
 
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={phoneCompatibility}
+              disabled={!file || isWorking}
+              onChange={(event) => setPhoneCompatibility(event.target.checked)}
+            />
+            <span>Phone compatibility mode</span>
+          </label>
+
           {useTargetSize ? (
             <label className="control">
               <span>
@@ -666,10 +731,18 @@ function App() {
             </div>
           ) : null}
           {error ? (
-            <p className="error">
-              <X size={18} />
-              {error}
-            </p>
+            <div className="error-block">
+              <p className="error">
+                <X size={18} />
+                {error}
+              </p>
+              {ffmpegLog ? (
+                <details>
+                  <summary>FFmpeg details</summary>
+                  <pre>{ffmpegLog}</pre>
+                </details>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </section>
