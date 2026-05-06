@@ -2,21 +2,34 @@
   "name": "smol video",
   "short_name": "smol video",
   "description": "Downscale video files locally in your browser.",
+<<<<<<< HEAD
   "start_url": "/",
   "scope": "/",
+=======
+  "start_url": ".",
+  "scope": "./",
+>>>>>>> 509dade (Initial smol video PWA)
   "display": "standalone",
   "background_color": "#070b0a",
   "theme_color": "#070b0a",
   "orientation": "portrait-primary",
   "icons": [
     {
+<<<<<<< HEAD
       "src": "/icons/icon.svg",
+=======
+      "src": "icons/icon.svg",
+>>>>>>> 509dade (Initial smol video PWA)
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
+<<<<<<< HEAD
       "src": "/icons/maskable.svg",
+=======
+      "src": "icons/maskable.svg",
+>>>>>>> 509dade (Initial smol video PWA)
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"

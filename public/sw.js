@@ -1,9 +1,16 @@
 const CACHE_NAME = "smol-video-v1";
 const APP_SHELL = [
+<<<<<<< HEAD
   "/",
   "/manifest.webmanifest",
   "/icons/icon.svg",
   "/icons/maskable.svg"
+=======
+  "./",
+  "manifest.webmanifest",
+  "icons/icon.svg",
+  "icons/maskable.svg"
+>>>>>>> 509dade (Initial smol video PWA)
 ];
 
 self.addEventListener("install", (event) => {

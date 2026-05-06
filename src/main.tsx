@@ -14,6 +14,10 @@ import {
   Play,
   Save,
   ScissorsLineDashed,
+<<<<<<< HEAD
+=======
+  Share2,
+>>>>>>> 509dade (Initial smol video PWA)
   SlidersHorizontal,
   Sparkles,
   UploadCloud,
@@ -105,7 +109,11 @@ async function loadFfmpeg(setStatus: (value: string) => void) {
   }
 
   setStatus("Loading local video tools");
+<<<<<<< HEAD
   const baseURL = "/ffmpeg";
+=======
+  const baseURL = `${import.meta.env.BASE_URL}ffmpeg`;
+>>>>>>> 509dade (Initial smol video PWA)
 
   await ffmpeg.load({
     coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
@@ -128,7 +136,17 @@ function App() {
   const [isWorking, setIsWorking] = useState(false);
   const [status, setStatus] = useState("");
   const [progress, setProgress] = useState(0);
+<<<<<<< HEAD
   const [result, setResult] = useState<{ name: string; size: number } | null>(null);
+=======
+  const [result, setResult] = useState<{
+    name: string;
+    size: number;
+    blob: Blob;
+    url: string;
+    destination: string;
+  } | null>(null);
+>>>>>>> 509dade (Initial smol video PWA)
   const [error, setError] = useState("");
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
 
@@ -166,7 +184,11 @@ function App() {
     window.addEventListener("beforeinstallprompt", handleInstall);
 
     if ("serviceWorker" in navigator) {
+<<<<<<< HEAD
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+=======
+      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => undefined);
+>>>>>>> 509dade (Initial smol video PWA)
     }
 
     return () => window.removeEventListener("beforeinstallprompt", handleInstall);
@@ -192,6 +214,18 @@ function App() {
       });
   }, [file]);
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    const url = result?.url;
+    return () => {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [result?.url]);
+
+>>>>>>> 509dade (Initial smol video PWA)
   const chooseFile = (selected: File | null) => {
     if (!selected) {
       return;
@@ -295,6 +329,59 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+<<<<<<< HEAD
+=======
+  const shareBlob = async (blob: Blob, name: string) => {
+    if (!navigator.share) {
+      setError("This browser does not support mobile sharing. Use Download instead.");
+      return;
+    }
+
+    const shareFile = new File([blob], name, { type: "video/mp4" });
+    const canShareFile = !navigator.canShare || navigator.canShare({ files: [shareFile] });
+
+    if (!canShareFile) {
+      setError("This browser cannot share video files from a web app. Use Download instead.");
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: "smol video",
+        files: [shareFile]
+      });
+      setError("");
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError("Sharing failed. The video is still ready to download.");
+      }
+    }
+  };
+
+  const openResult = () => {
+    if (!result?.url) {
+      return;
+    }
+
+    const opened = window.open(result.url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      setError("The browser blocked opening the video. Use Download or Share instead.");
+    }
+  };
+
+  const getDestinationLabel = () => {
+    if (savePlan.mode === "folder") {
+      return "selected folder";
+    }
+
+    if (savePlan.mode === "picker") {
+      return "chosen file";
+    }
+
+    return "downloads";
+  };
+
+>>>>>>> 509dade (Initial smol video PWA)
   const makeSmol = async () => {
     if (!file || !outputDimensions) {
       setError("Choose a video before compressing.");
@@ -362,7 +449,17 @@ function App() {
       const blob = new Blob([arrayBuffer], { type: "video/mp4" });
 
       await saveBlob(blob, safeOutputName);
+<<<<<<< HEAD
       setResult({ name: safeOutputName, size: blob.size });
+=======
+      setResult({
+        name: safeOutputName,
+        size: blob.size,
+        blob,
+        url: URL.createObjectURL(blob),
+        destination: getDestinationLabel()
+      });
+>>>>>>> 509dade (Initial smol video PWA)
       setStatus("Done");
 
       await ffmpeg.deleteFile(inputName).catch(() => undefined);
@@ -572,10 +669,33 @@ function App() {
           ) : null}
 
           {result ? (
+<<<<<<< HEAD
             <p className="success">
               <Sparkles size={18} />
               Saved {result.name} at {formatBytes(result.size)}.
             </p>
+=======
+            <div className="result">
+              <p className="success">
+                <Sparkles size={18} />
+                Saved {result.name} at {formatBytes(result.size)} to {result.destination}.
+              </p>
+              <div className="result__actions">
+                <button className="button button--secondary" type="button" onClick={openResult}>
+                  <Play size={18} />
+                  Open video
+                </button>
+                <button className="button button--secondary" type="button" onClick={() => shareBlob(result.blob, result.name)}>
+                  <Share2 size={18} />
+                  Share video
+                </button>
+              </div>
+              <p className="result__note">
+                PWAs cannot open the containing folder in the system file manager. Use Folder before encoding where
+                supported, or open/share the finished video here.
+              </p>
+            </div>
+>>>>>>> 509dade (Initial smol video PWA)
           ) : null}
           {error ? (
             <p className="error">
@@ -599,6 +719,13 @@ function App() {
           playback support.
         </p>
         <p>
+<<<<<<< HEAD
+=======
+          On phones, the most reliable export path is usually Download or Share. Exact save-location picking is mainly a
+          desktop Chromium feature, so iOS and many Android browsers will not offer same-folder saving.
+        </p>
+        <p>
+>>>>>>> 509dade (Initial smol video PWA)
           Very large files can be slow or run out of memory in WebAssembly. Some unusual, proprietary, or DRM-protected
           codecs may fail, and unsupported MOV or WMV clips may not preview in every browser before conversion.
         </p>
