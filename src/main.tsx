@@ -423,7 +423,7 @@ function App() {
           <UploadCloud size={42} />
           <span>{file ? file.name : "Drop a video here"}</span>
           <strong>Select video</strong>
-          <small>MP4, MOV, WMV and other FFmpeg-readable formats</small>
+          <small>MP4, MOV, WMV, phone clips and other FFmpeg-readable formats</small>
         </label>
 
         <div className="panel">
@@ -587,15 +587,20 @@ function App() {
       </section>
 
       <section className="limits">
-        <h2>Browser limits</h2>
+        <h2>Browser and codec limits</h2>
         <p>
           A web app cannot silently write beside the original file because browsers hide local paths. In Chromium-based
           browsers you can pick a save file or output folder; elsewhere the app downloads the result with the
           <code>_smol</code> name.
         </p>
         <p>
-          Very large files can be slow or run out of memory in WebAssembly. WMV and MOV can be transcoded by FFmpeg, but
-          they may not preview in every browser before conversion.
+          Common phone videos usually work, including MP4 and MOV files using H.264, HEVC/H.265, or AAC audio when the
+          bundled FFmpeg build can decode them. Output is normalized to MP4 with H.264 video and AAC audio for broad
+          playback support.
+        </p>
+        <p>
+          Very large files can be slow or run out of memory in WebAssembly. Some unusual, proprietary, or DRM-protected
+          codecs may fail, and unsupported MOV or WMV clips may not preview in every browser before conversion.
         </p>
       </section>
     </main>
