@@ -39,8 +39,6 @@ The FFmpeg WebAssembly files are copied into `public/ffmpeg` during `npm install
 ```bash
 npm run build
 ```
-<<<<<<< HEAD
-=======
 
 ## Deploy to GitHub Pages
 
@@ -51,4 +49,3 @@ In the GitHub repo settings, set Pages to **Source: GitHub Actions**. After that
 ```text
 https://sourmilkman.github.io/smol-video2/
 ```
->>>>>>> 509dade (Initial smol video PWA)

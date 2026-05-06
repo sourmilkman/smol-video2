@@ -1,0 +1,9 @@
+node_modules/
+dist/
+public/ffmpeg/
+ffmpeg/
+.env
+.env.*
+npm-debug.log*
+Thumbs.db
+.DS_Store

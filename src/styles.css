@@ -181,10 +181,7 @@ h1 {
 .muted,
 .estimate,
 .warning,
-<<<<<<< HEAD
-=======
 .result__note,
->>>>>>> 509dade (Initial smol video PWA)
 .limits p {
   color: var(--muted);
   line-height: 1.5;
@@ -343,8 +340,6 @@ input[type="range"] {
   color: #1a0905;
 }
 
-<<<<<<< HEAD
-=======
 .button--secondary {
   width: fit-content;
   min-height: 40px;
@@ -353,7 +348,6 @@ input[type="range"] {
   color: var(--text);
 }
 
->>>>>>> 509dade (Initial smol video PWA)
 .install-note {
   min-height: 42px;
   color: var(--teal);
@@ -380,8 +374,6 @@ input[type="range"] {
   font-weight: 800;
 }
 
-<<<<<<< HEAD
-=======
 .result {
   display: grid;
   gap: 10px;
@@ -397,7 +389,6 @@ input[type="range"] {
   font-size: 0.9rem;
 }
 
->>>>>>> 509dade (Initial smol video PWA)
 .error {
   color: var(--danger);
   line-height: 1.45;
