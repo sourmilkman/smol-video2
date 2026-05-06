@@ -1,0 +1,33 @@
+{
+  "name": "smol video",
+  "short_name": "smol video",
+  "description": "Downscale video files locally in your browser.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f3eb",
+  "theme_color": "#18231f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "video/*": [".mp4", ".mov", ".wmv", ".m4v", ".webm", ".avi", ".mkv"]
+      }
+    }
+  ]
+}

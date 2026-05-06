@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="smol video">
+  <rect width="512" height="512" rx="108" fill="#18231f"/>
+  <path d="M128 174c0-26.5 21.5-48 48-48h160c26.5 0 48 21.5 48 48v164c0 26.5-21.5 48-48 48H176c-26.5 0-48-21.5-48-48V174Z" fill="#f6f3eb"/>
+  <path d="M319 239.8c12 7.1 12 24.4 0 31.5l-91.8 54.2c-12.3 7.3-27.9-1.6-27.9-15.8V201.4c0-14.3 15.6-23.1 27.9-15.8l91.8 54.2Z" fill="#18231f"/>
+  <circle cx="374" cy="368" r="74" fill="#ef6f4d"/>
+  <path d="M347 368h54M374 341v54" stroke="#fff7ed" stroke-width="24" stroke-linecap="round"/>
+</svg>
