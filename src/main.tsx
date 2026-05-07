@@ -26,6 +26,7 @@ type Meta = {
   width: number;
   height: number;
   duration: number;
+  source?: "browser" | "ffmpeg" | "fallback";
 };
 
 type SaveMode = "download" | "picker" | "folder";
@@ -87,17 +88,65 @@ function getVideoMeta(file: File): Promise<Meta> {
       const meta = {
         width: video.videoWidth || 0,
         height: video.videoHeight || 0,
-        duration: video.duration || 0
+        duration: video.duration || 0,
+        source: "browser" as const
       };
       URL.revokeObjectURL(url);
       resolve(meta);
     };
     video.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("The browser could not read this video's metadata. Try compressing anyway."));
+      reject(new Error("The browser could not preview this video, so smol video will read it with FFmpeg when you compress."));
     };
     video.src = url;
   });
+}
+
+function parseDuration(value: string) {
+  const match = value.match(/(\d{2}):(\d{2}):(\d{2}(?:\.\d+)?)/);
+  if (!match) {
+    return 0;
+  }
+
+  return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+}
+
+function parseFfmpegMeta(logs: string[]): Meta | null {
+  const text = logs.join("\n");
+  const durationMatch = text.match(/Duration:\s*(\d{2}:\d{2}:\d{2}(?:\.\d+)?)/i);
+  const videoMatch = text.match(/Video:[^\n]*?\b(\d{2,5})x(\d{2,5})\b/i);
+
+  if (!videoMatch) {
+    return null;
+  }
+
+  let width = Number(videoMatch[1]);
+  let height = Number(videoMatch[2]);
+  const displayMatrixMatch = text.match(/rotation of\s*(-?\d+(?:\.\d+)?)\s*degrees/i);
+  const rotateTagMatch = text.match(/rotate\s*:\s*(-?\d+(?:\.\d+)?)/i);
+  const rotation = Number(displayMatrixMatch?.[1] ?? rotateTagMatch?.[1] ?? 0);
+
+  if (Number.isFinite(rotation) && Math.abs(Math.round(rotation / 90)) % 2 === 1) {
+    [width, height] = [height, width];
+  }
+
+  return {
+    width,
+    height,
+    duration: durationMatch ? parseDuration(durationMatch[1]) : 0,
+    source: "ffmpeg"
+  };
+}
+
+function getOutputDimensions(meta: Meta | null, scale: number) {
+  if (!meta?.width || !meta?.height) {
+    return null;
+  }
+
+  return {
+    width: even((meta.width * scale) / 100),
+    height: even((meta.height * scale) / 100)
+  };
 }
 
 async function loadFfmpeg(setStatus: (value: string) => void) {
@@ -144,16 +193,7 @@ function App() {
   const canPickSaveFile = typeof window.showSaveFilePicker === "function";
   const canPickFolder = typeof window.showDirectoryPicker === "function";
 
-  const outputDimensions = useMemo(() => {
-    if (!meta?.width || !meta?.height) {
-      return null;
-    }
-
-    return {
-      width: even((meta.width * scale) / 100),
-      height: even((meta.height * scale) / 100)
-    };
-  }, [meta, scale]);
+  const outputDimensions = useMemo(() => getOutputDimensions(meta, scale), [meta, scale]);
 
   const estimatedReduction = useMemo(() => {
     if (!file || !outputDimensions || !meta) {
@@ -198,7 +238,7 @@ function App() {
       .then(setMeta)
       .catch((err: Error) => {
         setMetaWarning(err.message);
-        setMeta({ width: 1280, height: 720, duration: 0 });
+        setMeta({ width: 1280, height: 720, duration: 0, source: "fallback" });
       });
   }, [file]);
 
@@ -389,7 +429,7 @@ function App() {
   };
 
   const makeSmol = async () => {
-    if (!file || !outputDimensions) {
+    if (!file) {
       setError("Choose a video before compressing.");
       return;
     }
@@ -416,7 +456,7 @@ function App() {
         }
 
         logs.push(message);
-        if (logs.length > 60) {
+        if (logs.length > 80) {
           logs.shift();
         }
       });
@@ -427,6 +467,32 @@ function App() {
 
       setStatus("Reading video");
       await ffmpeg.writeFile(inputName, await fetchFile(file));
+
+      let effectiveMeta = meta;
+      let effectiveOutputDimensions = outputDimensions;
+
+      if (!effectiveMeta || effectiveMeta.source === "fallback" || !effectiveMeta.duration) {
+        const probeStart = logs.length;
+        setStatus("Reading video details");
+        await ffmpeg.exec(["-hide_banner", "-nostdin", "-i", inputName]).catch(() => undefined);
+        const probedMeta = parseFfmpegMeta(logs.slice(probeStart));
+
+        if (probedMeta) {
+          effectiveMeta = probedMeta;
+          effectiveOutputDimensions = getOutputDimensions(probedMeta, scale);
+          setMeta(probedMeta);
+          setMetaWarning("");
+        }
+      }
+
+      if (!effectiveOutputDimensions) {
+        effectiveMeta = { width: 1280, height: 720, duration: 0, source: "fallback" };
+        effectiveOutputDimensions = getOutputDimensions(effectiveMeta, scale);
+      }
+
+      if (!effectiveOutputDimensions) {
+        throw new Error("Could not choose output dimensions for this video.");
+      }
 
       const args = [
         "-hide_banner",
@@ -446,7 +512,7 @@ function App() {
         "-map_metadata",
         phoneCompatibility ? "-1" : "0",
         "-vf",
-        `scale=${outputDimensions.width}:${outputDimensions.height}:flags=lanczos,format=yuv420p`,
+        `scale=${effectiveOutputDimensions.width}:${effectiveOutputDimensions.height}:flags=lanczos,format=yuv420p`,
         "-c:v",
         "libx264",
         "-preset",
@@ -461,10 +527,10 @@ function App() {
         "128k"
       ];
 
-      if (useTargetSize && targetSize > 0 && meta?.duration) {
+      if (useTargetSize && targetSize > 0 && effectiveMeta?.duration) {
         const totalBits = targetSize * 1024 * 1024 * 8;
         const audioBitsPerSecond = 128000;
-        const videoBitrate = Math.max(120000, Math.floor(totalBits / meta.duration - audioBitsPerSecond));
+        const videoBitrate = Math.max(120000, Math.floor(totalBits / effectiveMeta.duration - audioBitsPerSecond));
         args.push("-b:v", `${Math.floor(videoBitrate / 1000)}k`, "-maxrate", `${Math.floor(videoBitrate / 850)}k`, "-bufsize", `${Math.floor(videoBitrate / 500)}k`);
       } else {
         args.push("-crf", String(quality));
